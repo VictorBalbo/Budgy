@@ -1,12 +1,12 @@
-import { Text, View, StyleSheet } from "react-native";
+import { TextType, ThemedText, ThemedView } from "@/components/ui";
+import { StyleSheet } from "react-native";
 
-/** "Account" tab screen — the `account` route of the native tab bar. */
 export default function Account() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Account</Text>
-      <Text style={styles.subtitle}>Manage your profile and settings.</Text>
-    </View>
+    <ThemedView background style={styles.container}>
+      <ThemedText type={TextType.Display}>Account</ThemedText>
+      <ThemedText type={TextType.Body}>Manage your profile and settings.</ThemedText>
+    </ThemedView>
   );
 }
 
@@ -15,14 +15,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
+  }
 });
