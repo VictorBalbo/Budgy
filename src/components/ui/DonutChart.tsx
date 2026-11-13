@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import Animated, {
   Easing,
@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Colors, radius, spacing } from "@/constants/theme";
+import { Colors, fontSize, radius, spacing } from "@/constants/theme";
 import { useThemeColor } from "@/hooks";
 import { ThemedText, TextType } from "./ThemedText";
 
@@ -34,8 +34,6 @@ export type DonutChartProps = {
   formatValue?: (value: number) => string;
   /** Rótulo exibido abaixo do total quando nenhum arco está selecionado. */
   totalLabel?: string;
-  textColor?: string;
-  mutedColor?: string;
 };
 
 const DEFAULT_COLORS = [
@@ -49,6 +47,9 @@ const DEFAULT_COLORS = [
 
 // Quanto o arco selecionado engrossa (em px).
 const ACTIVE_EXTRA = 8;
+
+// Pontinhos que "preenchem" o espaço entre o rótulo e o valor na legenda.
+const LEADER_DOTS = ".".repeat(120);
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -142,6 +143,7 @@ export const DonutChart = ({
   totalLabel = "Total",
 }: DonutChartProps) => {
   const textColor = useThemeColor("text");
+  const mutedColor = useThemeColor("caption");
 
   const [rawSelected, setRawSelected] = useState<number | null>(null);
   const [shown, setShown] = useState<number | null>(null);
@@ -234,7 +236,7 @@ export const DonutChart = ({
 
   return (
     <View style={styles.container}>
-      <View style={{ width: size, height: size }}>
+      <View style={[styles.donut, { width: size, height: size }]}>
         <Svg width={size} height={size}>
           {segments.map((s) => (
             <Segment
@@ -271,17 +273,40 @@ export const DonutChart = ({
       <View style={styles.legend}>
         {items.map((item, index) => {
           const dimmed = selected !== null && selected !== index;
+          const value = formatValue(item.value);
           return (
             <Pressable
               key={index}
               onPress={() => toggle(index)}
               accessibilityRole="button"
               accessibilityState={{ selected: selected === index }}
+              accessibilityLabel={`${item.label}: ${value}`}
               style={[styles.legendItem, { opacity: dimmed ? 0.45 : 1 }]}
             >
               <View style={[styles.dot, { backgroundColor: item.color }]} />
-              <ThemedText type={TextType.Footnote} color={textColor}>
+              <ThemedText
+                type={TextType.Footnote}
+                color={textColor}
+                numberOfLines={1}
+              >
                 {item.label}
+              </ThemedText>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="clip"
+                accessible={false}
+                aria-hidden
+                style={[styles.leader, { color: mutedColor }]}
+              >
+                {LEADER_DOTS}
+              </Text>
+              <ThemedText
+                type={TextType.Footnote}
+                color={textColor}
+                numberOfLines={1}
+                textStyle={styles.legendValue}
+              >
+                {value}
               </ThemedText>
             </Pressable>
           );
@@ -293,7 +318,10 @@ export const DonutChart = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignItems: "stretch",
+  },
+  donut: {
+    alignSelf: "center",
   },
   centerWrap: {
     ...StyleSheet.absoluteFill,
@@ -301,22 +329,31 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   legend: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
     marginTop: spacing.large,
     paddingHorizontal: spacing.medium,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: spacing.medium,
-    marginVertical: spacing.smallExtra,
+    paddingVertical: spacing.smallExtra,
   },
   dot: {
     width: spacing.medium,
     height: spacing.medium,
     borderRadius: radius.full,
-    marginRight: spacing.smallExtra,
+    marginRight: spacing.small,
+  },
+  leader: {
+    flex: 1,
+    marginHorizontal: spacing.smallExtra,
+    fontSize: fontSize.small,
+    // Mesma altura de linha do Footnote, para os pontos ficarem na mesma
+    // linha de base do rótulo e do valor.
+    lineHeight: fontSize.medium * 0.875 * 1.5,
+    letterSpacing: 3,
+    overflow: "hidden",
+  },
+  legendValue: {
+    fontWeight: "600",
   },
 });
