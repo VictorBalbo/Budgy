@@ -6,6 +6,7 @@ import {
   ThemedText,
   ThemedView,
   ButtonFormat,
+  DonutChart,
 } from "@/components/ui";
 import { StyleSheet } from "react-native";
 
@@ -41,6 +42,26 @@ export default function Index() {
         title="Delete"
         type={ButtonType.Delete}
         onPress={() => alert("Delete!")}
+      />
+      <DonutChart
+        data={[
+          {
+            label: "Firefox",
+            value: 30,
+          },
+          {
+            label: "Chrome",
+            value: 70,
+          },
+          {
+            label: "Zen",
+            value: 10,
+          },
+          {
+            label: "Safari",
+            value: 50,
+          },
+        ]}
       />
     </ThemedView>
   );
