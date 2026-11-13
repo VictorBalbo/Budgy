@@ -1,0 +1,156 @@
+import { Account, AccountType, BankAccount, CreditCardAccount } from "@/models";
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
+
+export interface AccountContextValue {
+  activeAccounts: Account[];
+  bankAccounts: BankAccount[];
+  creditCards: CreditCardAccount[];
+  totalBalanceInCents: number;
+  totalCreditLimitInCents: number;
+  getAccountById: (id: string) => Account | undefined;
+  setAccount: (account: Account) => void;
+  removeAccount: (id: string) => void;
+  archiveAccount: (id: string) => void;
+  unarchiveAccount: (id: string) => void;
+}
+
+type AccountProviderProps = PropsWithChildren<{ initialAccounts?: Account[] }>;
+const AccountContext = createContext<AccountContextValue | null>(null);
+export const AccountProvider = ({
+  children,
+  initialAccounts = [],
+}: AccountProviderProps) => {
+  const [accounts, setAccounts] = useState(initialAccounts);
+
+  const activeAccounts = useMemo(
+    () => accounts.filter((account) => !account.isArchived),
+    [accounts],
+  );
+
+  const bankAccounts = useMemo(
+    () =>
+      activeAccounts.filter(
+        (account) => account.type !== AccountType.CreditCard,
+      ),
+    [activeAccounts],
+  );
+
+  const creditCards = useMemo(
+    () =>
+      activeAccounts.filter(
+        (account) => account.type === AccountType.CreditCard,
+      ),
+    [activeAccounts],
+  );
+
+  const totalBalanceInCents = useMemo(
+    () =>
+      bankAccounts.reduce(
+        (total, account) => total + account.balanceInCents,
+        0,
+      ),
+    [bankAccounts],
+  );
+
+  const totalCreditLimitInCents = useMemo(
+    () =>
+      creditCards.reduce((total, card) => total + card.creditLimitInCents, 0),
+    [creditCards],
+  );
+
+  const getAccountById = useCallback(
+    (id: string) => accounts.find((account) => account.id === id),
+    [accounts],
+  );
+
+  const setAccount = useCallback(
+    (account: Account) => {
+      const exists = accounts.some((a) => a.id === account.id);
+      const updated = exists
+        ? accounts?.map((a) => (a.id === account.id ? account : a))
+        : [...(accounts ?? []), account];
+      setAccounts(updated);
+    },
+    [accounts],
+  );
+
+  const removeAccount = useCallback(
+    (id: string) => {
+      setAccounts(accounts.filter((a) => a.id !== id));
+    },
+    [accounts],
+  );
+
+  const archiveAccount = useCallback(
+    (id: string) => {
+      const updated = accounts.map((a) =>
+        a.id === id ? { ...a, isArchived: true } : a,
+      );
+      setAccounts(updated);
+    },
+    [accounts],
+  );
+
+  const unarchiveAccount = useCallback(
+    (id: string) => {
+      const updated = accounts.map((a) =>
+        a.id === id ? { ...a, isArchived: false } : a,
+      );
+      setAccounts(updated);
+    },
+    [accounts],
+  );
+
+  const value = useMemo<AccountContextValue>(
+    () => ({
+      accounts,
+      activeAccounts,
+      bankAccounts,
+      creditCards,
+      totalBalanceInCents,
+      totalCreditLimitInCents,
+      getAccountById,
+      setAccount,
+      removeAccount,
+      archiveAccount,
+      unarchiveAccount,
+    }),
+    [
+      accounts,
+      activeAccounts,
+      bankAccounts,
+      creditCards,
+      totalBalanceInCents,
+      totalCreditLimitInCents,
+      getAccountById,
+      setAccount,
+      removeAccount,
+      archiveAccount,
+      unarchiveAccount,
+    ],
+  );
+
+  return (
+    <AccountContext.Provider value={value}>{children}</AccountContext.Provider>
+  );
+};
+
+/** Acessa o estado e as ações de contas/cartões do app. */
+export const useAccountsContext = (): AccountContextValue => {
+  const context = useContext(AccountContext);
+
+  if (context === null) {
+    throw new Error(
+      "useAccounts precisa ser usado dentro de <AccountProvider>.",
+    );
+  }
+
+  return context;
+};
