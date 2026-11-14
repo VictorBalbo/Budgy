@@ -2,19 +2,20 @@ import { CurrencyCode, TransactionType } from "./common";
 
 export interface Transaction {
   id?: string;
+  accountId: string;
+  categoryId: string;
   title: string;
   description?: string;
   amountInCents: number;
   currency: CurrencyCode;
   type: TransactionType;
   date: string;
-  categoryId: string;
-  walletId: string;
   paymentMethod: PaymentMethod;
   tags?: string[];
   installment?: InstallmentInfo;
   recurrence?: RecurrenceInfo;
   attachmentUri?: string;
+  transferAccountId?: string;
 }
 
 export enum PaymentMethod {

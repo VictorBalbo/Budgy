@@ -10,10 +10,6 @@ import {
 
 export interface AccountContextValue {
   activeAccounts: Account[];
-  bankAccounts: BankAccount[];
-  creditCards: CreditCardAccount[];
-  totalBalanceInCents: number;
-  totalCreditLimitInCents: number;
   getAccountById: (id: string) => Account | undefined;
   setAccount: (account: Account) => void;
   removeAccount: (id: string) => void;
@@ -28,41 +24,9 @@ export const AccountProvider = ({
   initialAccounts = [],
 }: AccountProviderProps) => {
   const [accounts, setAccounts] = useState(initialAccounts);
-
   const activeAccounts = useMemo(
-    () => accounts.filter((account) => !account.isArchived),
+    () => accounts.filter((account) => !account.archivedAt),
     [accounts],
-  );
-
-  const bankAccounts = useMemo(
-    () =>
-      activeAccounts.filter(
-        (account) => account.type !== AccountType.CreditCard,
-      ),
-    [activeAccounts],
-  );
-
-  const creditCards = useMemo(
-    () =>
-      activeAccounts.filter(
-        (account) => account.type === AccountType.CreditCard,
-      ),
-    [activeAccounts],
-  );
-
-  const totalBalanceInCents = useMemo(
-    () =>
-      bankAccounts.reduce(
-        (total, account) => total + account.balanceInCents,
-        0,
-      ),
-    [bankAccounts],
-  );
-
-  const totalCreditLimitInCents = useMemo(
-    () =>
-      creditCards.reduce((total, card) => total + card.creditLimitInCents, 0),
-    [creditCards],
   );
 
   const getAccountById = useCallback(
@@ -110,12 +74,7 @@ export const AccountProvider = ({
 
   const value = useMemo<AccountContextValue>(
     () => ({
-      accounts,
       activeAccounts,
-      bankAccounts,
-      creditCards,
-      totalBalanceInCents,
-      totalCreditLimitInCents,
       getAccountById,
       setAccount,
       removeAccount,
@@ -123,12 +82,7 @@ export const AccountProvider = ({
       unarchiveAccount,
     }),
     [
-      accounts,
       activeAccounts,
-      bankAccounts,
-      creditCards,
-      totalBalanceInCents,
-      totalCreditLimitInCents,
       getAccountById,
       setAccount,
       removeAccount,

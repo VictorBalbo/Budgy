@@ -6,4 +6,5 @@ export const DEFAULT_CURRENCY: CurrencyCode = "BRL";
 export enum TransactionType {
   Expense = "expense",
   Income = "income",
+  Transfer = "transfer"
 }
