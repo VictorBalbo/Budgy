@@ -71,7 +71,7 @@ export const TransactionProvider = ({
       transactions.filter((transaction) => transaction.accountId === walletId),
     [transactions],
   );
-  
+
   const getCumulativeTransactionsPerDay = useCallback(
     (month: string): (number | null)[] => {
       const monthInfo = getMonthInfo(month);
@@ -82,10 +82,7 @@ export const TransactionProvider = ({
 
       const { daysInMonth, lastKnownDay } = monthInfo;
 
-      const totalsPerDayInCents = Array.from(
-        { length: daysInMonth },
-        () => 0,
-      );
+      const totalsPerDayInCents = Array.from({ length: daysInMonth }, () => 0);
 
       transactions.forEach((transaction) => {
         if (getMonthOfDate(transaction.date) !== month) {

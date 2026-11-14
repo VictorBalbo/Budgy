@@ -11,15 +11,13 @@ import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
-  const {getCumulativeTransactionsPerDay} = useTransactionsContext();
-  const valuePerDay = getCumulativeTransactionsPerDay('2026-11');
+  const { getCumulativeTransactionsPerDay } = useTransactionsContext();
+  const valuePerDay = getCumulativeTransactionsPerDay("2026-11");
   const spendingData = valuePerDay.map((value, index) => ({
-  label: String(index + 1),
-  title: `Dia ${index + 1}`,
-  value: value ? value / 100 : null,
-  
-}));
-  console.log(valuePerDay)
+    label: String(index + 1),
+    title: `Dia ${index + 1}`,
+    value: value ? value / 100 : null,
+  }));
   return (
     <ThemedView background style={styles.container}>
       <ScrollView>

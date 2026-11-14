@@ -1,8 +1,4 @@
-import {
-  seedAccounts,
-  seedCategories,
-  seedTransactions,
-} from "@/data/seed";
+import { seedAccounts, seedCategories, seedTransactions } from "@/data/seed";
 import {
   AccountProvider,
   CategoryProvider,
@@ -40,4 +36,3 @@ export default function RootLayout() {
     </AccountProvider>
   );
 }
-
