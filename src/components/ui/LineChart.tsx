@@ -34,8 +34,13 @@ export type LineData = {
   label: string;
   /** Texto completo exibido no tooltip (usa `label` quando ausente). */
   title?: string;
-  /** Valor da linha ativa (sólida). */
-  value: number;
+  /**
+   * Valor da linha ativa (sólida). Omitir (ou passar `null`) encerra a linha
+   * nesse ponto — ex.: dias futuros de um período em andamento. Só o fim da
+   * série pode ficar sem valor: a linha vai do primeiro ponto até o último com
+   * valor e o eixo X continua ocupando a largura toda.
+   */
+  value?: number | null;
   /** Valor da linha de referência (tracejada). Pontos sem referência são omitidos dela. */
   reference?: number;
 };
@@ -132,7 +137,10 @@ export const LineChart = ({
       data.map((point) => ({
         label: point.label,
         title: point.title ?? point.label,
-        value: Math.max(0, point.value),
+        // Pontos sem valor (ex.: dias futuros) ficam fora da linha; o 0 é só
+        // para manter as contas numéricas.
+        value: Math.max(0, point.value ?? 0),
+        hasValue: point.value !== undefined && point.value !== null,
         reference:
           point.reference === undefined
             ? undefined
@@ -141,10 +149,25 @@ export const LineChart = ({
     [data],
   );
 
+  // A linha vai do começo até o último ponto com valor: valores ausentes só
+  // existem no fim da série (ex.: dias futuros de um período em andamento).
+  const drawCount = useMemo(() => {
+    const index = points.findIndex((point) => !point.hasValue);
+    return index === -1 ? points.length : index;
+  }, [points]);
+
   const plotBottom = height - PADDING_BOTTOM;
   const plotWidth = Math.max(0, width - PADDING_HORIZONTAL * 2);
   const plotHeight = Math.max(0, plotBottom - PADDING_TOP);
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0;
+
+  // X de cada índice independe de o ponto ter valor: assim o eixo continua
+  // ocupando a largura toda mesmo quando a linha termina antes do fim.
+  const xAt = useCallback(
+    (index: number) =>
+      points.length > 1 ? PADDING_HORIZONTAL + index * step : width / 2,
+    [points.length, step, width],
+  );
 
   const domainTop = useMemo(() => {
     let max = 0;
@@ -160,23 +183,24 @@ export const LineChart = ({
     [plotBottom, domainTop, plotHeight],
   );
 
+  // Coordenadas da linha ativa: do primeiro ponto até o último com valor.
   const coords = useMemo<Coords[]>(() => {
     if (width === 0) return [];
-    return points.map((point, index) => ({
-      x: points.length > 1 ? PADDING_HORIZONTAL + index * step : width / 2,
-      y: toY(point.value),
-    }));
-  }, [points, step, toY, width]);
+    const result: Coords[] = [];
+    for (let index = 0; index < drawCount; index++) {
+      result.push({ x: xAt(index), y: toY(points[index].value) });
+    }
+    return result;
+  }, [drawCount, points, toY, xAt, width]);
 
   const referenceCoords = useMemo<Coords[]>(() => {
-    if (coords.length !== points.length) return [];
     const result: Coords[] = [];
     points.forEach((point, index) => {
       if (point.reference === undefined) return;
-      result.push({ x: coords[index].x, y: toY(point.reference) });
+      result.push({ x: xAt(index), y: toY(point.reference) });
     });
     return result;
-  }, [points, coords, toY]);
+  }, [points, toY, xAt]);
 
   const linePath = useMemo(() => buildSmoothPath(coords), [coords]);
   const referencePath = useMemo(
@@ -192,24 +216,24 @@ export const LineChart = ({
   }, [coords, linePath, plotBottom]);
 
   const ticks = useMemo(() => {
-    if (coords.length !== points.length || points.length === 0) return [];
+    if (width === 0 || points.length === 0) return [];
     const count = Math.min(xTickCount, points.length);
     if (count <= 1) {
-      return [{ index: 0, x: coords[0].x, label: points[0].label }];
+      return [{ index: 0, x: xAt(0), label: points[0].label }];
     }
     const result: { index: number; x: number; label: string }[] = [];
     for (let i = 0; i < count; i++) {
       const index = Math.round((i * (points.length - 1)) / (count - 1));
       if (result[result.length - 1]?.index === index) continue;
-      result.push({ index, x: coords[index].x, label: points[index].label });
+      result.push({ index, x: xAt(index), label: points[index].label });
     }
     return result;
-  }, [coords, points, xTickCount]);
+  }, [points, width, xAt, xTickCount]);
 
   // Derivado em vez de sincronizado: se os dados encolherem, a seleção some.
   const selected =
-    rawSelected !== null && rawSelected < points.length ? rawSelected : null;
-  const shownInRange = shown !== null && shown < points.length ? shown : null;
+    rawSelected !== null && rawSelected < drawCount ? rawSelected : null;
+  const shownInRange = shown !== null && shown < drawCount ? shown : null;
   const shownPoint = shownInRange !== null ? points[shownInRange] : undefined;
   const shownCoord = shownInRange !== null ? coords[shownInRange] : undefined;
 
@@ -293,16 +317,18 @@ export const LineChart = ({
     );
   }, []);
 
-  // Toque escolhe o ponto mais próximo no eixo X; tocar de novo no mesmo
-  // ponto fecha o tooltip (mesmo comportamento do DonutChart).
+  // Toque escolhe o ponto desenhado mais próximo no eixo X; tocar de novo no
+  // mesmo ponto fecha o tooltip (mesmo comportamento do DonutChart).
   const handlePress = useCallback(
     (event: GestureResponderEvent) => {
-      if (points.length === 0) return;
+      if (drawCount === 0) return;
       const { locationX } = event.nativeEvent;
+      // Nunca além do último ponto com valor: o tooltip não pode apontar para
+      // um trecho onde a linha não existe.
       const index =
-        points.length > 1 && step > 0
+        step > 0
           ? Math.min(
-              points.length - 1,
+              drawCount - 1,
               Math.max(0, Math.round((locationX - PADDING_HORIZONTAL) / step)),
             )
           : 0;
@@ -311,7 +337,7 @@ export const LineChart = ({
       setRawSelected(next);
       if (next !== null) onPointPress?.(points[next], next);
     },
-    [points, step, rawSelected, onPointPress],
+    [drawCount, points, step, rawSelected, onPointPress],
   );
 
   if (points.length === 0) return null;
