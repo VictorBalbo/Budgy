@@ -1,3 +1,11 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { getLocales } from "expo-localization";
+
+dayjs.extend(utc);
+const locales = getLocales();
+const deviceLanguage = locales[0].languageCode ?? "en";
+
 /** Formato de mês aceito pelos helpers: `YYYY-MM` (igual às datas do modelo). */
 export const MONTH_PATTERN = /^(\d{4})-(\d{2})$/;
 
@@ -85,4 +93,17 @@ export const getMonthInfo = (month: string): MonthInfo | null => {
     daysInMonth: getDaysInMonth(year, monthNumber),
     lastKnownDay: getLastKnownDayOfMonth(year, monthNumber),
   };
+};
+
+export const dateUtc = (d?: Date) => {
+  let dateObject = d ? new Date(d) : new Date();
+  return dayjs(dateObject).utc();
+};
+
+export const displayDate = (d: Date, format: string) => {
+  const display = dateUtc(d)
+    .locale(deviceLanguage)
+    .format(format)
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return display;
 };

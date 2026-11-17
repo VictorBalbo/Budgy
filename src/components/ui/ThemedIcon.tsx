@@ -41,6 +41,10 @@ export class IconSymbols {
     ios: "chevron.left",
     android: require("@expo/material-symbols/arrow_back_ios_new.xml"),
   };
+  calendar: IconSymbol = {
+    ios: "calendar",
+    android: require("@expo/material-symbols/calendar_month.xml"),
+  };
 }
 type IconSymbol = {
   ios: SFSymbol;
