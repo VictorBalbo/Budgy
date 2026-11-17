@@ -16,12 +16,7 @@ export const ThemedIcon = ({
   style,
   noHost,
 }: IconProps) => {
-  const symbolMapping = new IconSymbols();
-  const iconConfig = symbolMapping[name];
-  const iconName = Icon.select({
-    ios: iconConfig.ios,
-    android: iconConfig.android,
-  });
+  const iconName = getIconSymbol(name);
 
   const icon = <Icon name={iconName} size={size} color={color} style={style} />;
 
@@ -32,10 +27,19 @@ export const ThemedIcon = ({
   }
 };
 
+export const getIconSymbol = (name: keyof IconSymbols) => {
+    const iconSymbols = new IconSymbols();
+    const iconSymbol = iconSymbols[name];
+    return Icon.select(iconSymbol);
+  }
 export class IconSymbols {
   plus: IconSymbol = {
     ios: "plus",
     android: require("@expo/material-symbols/add.xml"),
+  };
+  chevronLeft: IconSymbol = {
+    ios: "chevron.left",
+    android: require("@expo/material-symbols/arrow_back_ios_new.xml"),
   };
 }
 type IconSymbol = {

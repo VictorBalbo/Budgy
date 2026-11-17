@@ -4,13 +4,18 @@ import {
   ThemedView,
   LineChart,
   CardView,
+  ThemedButton,
+  ButtonType,
+  ButtonFormat,
 } from "@/components/ui";
 import { spacing } from "@/constants/theme";
 import { useTransactionsContext } from "@/hooks";
+import { useRouter } from "expo-router";
 import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
+  const router = useRouter();
   const { getCumulativeTransactionsPerDay } = useTransactionsContext();
   const valuePerDay = getCumulativeTransactionsPerDay("2026-11");
   const spendingData = valuePerDay.map((value, index) => ({
@@ -33,6 +38,12 @@ export default function Index() {
               xTickCount={6}
             />
           </CardView>
+          <ThemedButton
+            icon="plus"
+            type={ButtonType.Secondary}
+            format={ButtonFormat.Round}
+            onPress={() => router.push("/AddTransaction")}
+          />
         </SafeAreaView>
       </ScrollView>
     </ThemedView>

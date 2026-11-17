@@ -8,7 +8,7 @@ export const useThemeColor = (propertyName: keyof ColorScheme) => {
   return Theme[currentTheme][propertyName];
 }
 
-const useTheme = () => {
+export const useTheme = () => {
   const colorScheme = useColorScheme();
   let currentTheme = colorScheme;
   if (currentTheme === null) {

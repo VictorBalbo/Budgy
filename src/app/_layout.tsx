@@ -3,36 +3,34 @@ import {
   AccountProvider,
   CategoryProvider,
   TransactionProvider,
+  useTheme,
+  useThemeColor,
 } from "@/hooks";
-import { NativeTabs } from "expo-router/native-tabs";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 
 export default function RootLayout() {
+  const scheme = useTheme();
+  const backgroundColor = useThemeColor("background");
+  const navigationTheme = scheme === "dark" ? DarkTheme : DefaultTheme;
   return (
-    <AccountProvider initialAccounts={seedAccounts}>
-      <CategoryProvider initialCategories={seedCategories}>
-        <TransactionProvider initialTransactions={seedTransactions}>
-          <NativeTabs>
-            <NativeTabs.Trigger name="index">
-              <NativeTabs.Trigger.Label>Overview</NativeTabs.Trigger.Label>
-              <NativeTabs.Trigger.Icon
-                sf={{
-                  default: "square.grid.2x2",
-                  selected: "square.grid.2x2.fill",
+    <ThemeProvider value={navigationTheme}>
+      <AccountProvider initialAccounts={seedAccounts}>
+        <CategoryProvider initialCategories={seedCategories}>
+          <TransactionProvider initialTransactions={seedTransactions}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="AddTransaction"
+                options={{
+                  presentation: "modal",
+                  title: "Nova Transação",
+                  headerStyle: { backgroundColor },
                 }}
-                md="dashboard"
               />
-            </NativeTabs.Trigger>
-
-            <NativeTabs.Trigger name="account">
-              <NativeTabs.Trigger.Label>Account</NativeTabs.Trigger.Label>
-              <NativeTabs.Trigger.Icon
-                sf={{ default: "person", selected: "person.fill" }}
-                md="person"
-              />
-            </NativeTabs.Trigger>
-          </NativeTabs>
-        </TransactionProvider>
-      </CategoryProvider>
-    </AccountProvider>
+            </Stack>
+          </TransactionProvider>
+        </CategoryProvider>
+      </AccountProvider>
+    </ThemeProvider>
   );
 }
